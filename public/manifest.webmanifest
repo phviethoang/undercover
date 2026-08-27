@@ -1,0 +1,12 @@
+{
+  "name": "Undercover — Ai Là Gián Điệp?",
+  "short_name": "Undercover",
+  "description": "Game Ai là gián điệp chơi offline cùng nhóm bạn trên một điện thoại",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#140a26",
+  "theme_color": "#140a26",
+  "icons": [
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

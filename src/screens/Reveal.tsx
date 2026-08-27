@@ -1,0 +1,96 @@
+import { useState } from 'react';
+import type { Player } from '../game/types';
+import { vibrate } from '../vibrate';
+
+interface Props {
+  player: Player;
+  index: number;
+  total: number;
+  onDone: (name: string) => void;
+}
+
+export function Reveal({ player, index, total, onDone }: Props) {
+  const [step, setStep] = useState<'pass' | 'card'>('pass');
+  const [name, setName] = useState(player.name);
+  const [holding, setHolding] = useState(false);
+  const [viewed, setViewed] = useState(false);
+
+  if (step === 'pass') {
+    return (
+      <div className="screen pass">
+        <p className="pass-count">
+          {index + 1} / {total}
+        </p>
+        <div className="pass-emoji">📲</div>
+        <h2 className="pass-title">Chuyền máy cho người thứ {index + 1}</h2>
+        <p className="pass-hint">Không để ai khác nhìn màn hình tiếp theo nhé!</p>
+        <button className="btn btn-primary btn-big" onClick={() => setStep('card')}>
+          Tôi là người thứ {index + 1} 🙋
+        </button>
+      </div>
+    );
+  }
+
+  const isWhite = player.word === null;
+
+  return (
+    <div className="screen reveal">
+      <p className="pass-count">
+        {index + 1} / {total}
+      </p>
+      <input
+        className="name-input"
+        value={name}
+        maxLength={20}
+        placeholder={`Người chơi ${index + 1}`}
+        onChange={(e) => setName(e.target.value)}
+      />
+
+      <div
+        className={`word-card ${holding ? 'is-open' : ''}`}
+        onPointerDown={(e) => {
+          e.preventDefault();
+          setHolding(true);
+          if (!viewed) vibrate(30);
+          setViewed(true);
+        }}
+        onPointerUp={() => setHolding(false)}
+        onPointerLeave={() => setHolding(false)}
+        onPointerCancel={() => setHolding(false)}
+        onContextMenu={(e) => e.preventDefault()}
+      >
+        {holding ? (
+          isWhite ? (
+            <div className="word-card-white">
+              <span className="word-card-icon">🤍</span>
+              <span className="word-card-word">Bạn là MŨ TRẮNG</span>
+              <span className="word-card-note">
+                Bạn không có từ khóa. Nghe mọi người mô tả, giả vờ hòa nhập và đoán từ của Dân — đoán
+                đúng là thắng ngay!
+              </span>
+            </div>
+          ) : (
+            <div className="word-card-open">
+              <span className="word-card-label">Từ của bạn</span>
+              <span className="word-card-word">{player.word}</span>
+            </div>
+          )
+        ) : (
+          <div className="word-card-closed">
+            <span className="word-card-icon">🎴</span>
+            <span>{viewed ? 'Giữ để xem lại' : 'Giữ để xem từ'}</span>
+            <span className="word-card-note">Thả tay ra là ẩn ngay</span>
+          </div>
+        )}
+      </div>
+
+      <button
+        className="btn btn-primary btn-big"
+        disabled={!viewed || holding}
+        onClick={() => onDone(name.trim() || `Người chơi ${index + 1}`)}
+      >
+        {viewed ? (index + 1 >= total ? 'Xong — Bắt đầu chơi! 🚀' : 'Xong, chuyền máy ➡️') : 'Hãy xem từ trước đã'}
+      </button>
+    </div>
+  );
+}

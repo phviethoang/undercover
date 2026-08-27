@@ -1,0 +1,8 @@
+node_modules/
+dist/
+*.local
+.DS_Store
+
+# Kho từ dạng đọc được — KHÔNG BAO GIỜ commit (spoiler)
+words.plain.json
+words-agent*.json
