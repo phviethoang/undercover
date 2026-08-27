@@ -282,30 +282,37 @@ export function Setup({ initial, categories, onBack, onStart }: Props) {
 
           {showSpecials && (
             <div className="collapse-body">
-              {SPECIAL_KEYS.map((key) => {
+              {SPECIAL_KEYS.map((key, i) => {
                 const info = SPECIAL_INFO[key];
                 const available = specialAvailable(key, total);
+                const prevKind = i > 0 ? SPECIAL_INFO[SPECIAL_KEYS[i - 1]].kind : null;
+                const heading =
+                  info.kind !== prevKind
+                    ? info.kind === 'mode'
+                      ? 'Chế độ — áp cho cả bàn'
+                      : 'Vai bí mật — bốc cho người cụ thể'
+                    : null;
                 return (
-                  <label
-                    key={key}
-                    className={`toggle-row special-row ${available ? '' : 'is-locked'}`}
-                  >
-                    <span>
-                      {info.icon} {info.label}
-                      <small>
-                        {available
-                          ? info.desc
-                          : `Cần ít nhất ${info.minPlayers} người chơi mới bật được`}
-                      </small>
-                    </span>
-                    <input
-                      type="checkbox"
-                      disabled={!available}
-                      checked={s.specials[key] && available}
-                      onChange={() => toggleSpecial(key)}
-                    />
-                    <span className="toggle-ui" />
-                  </label>
+                  <div key={key}>
+                    {heading && <p className="special-group">{heading}</p>}
+                    <label className={`toggle-row special-row ${available ? '' : 'is-locked'}`}>
+                      <span>
+                        {info.icon} {info.label}
+                        <small>
+                          {available
+                            ? info.desc
+                            : `Cần ít nhất ${info.minPlayers} người chơi mới bật được`}
+                        </small>
+                      </span>
+                      <input
+                        type="checkbox"
+                        disabled={!available}
+                        checked={s.specials[key] && available}
+                        onChange={() => toggleSpecial(key)}
+                      />
+                      <span className="toggle-ui" />
+                    </label>
+                  </div>
                 );
               })}
             </div>

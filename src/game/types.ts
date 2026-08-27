@@ -40,27 +40,34 @@ export type SpecialKey = keyof SpecialRoles;
 
 export const SPECIAL_INFO: Record<
   SpecialKey,
-  { label: string; icon: string; short: string; desc: string; minPlayers: number }
+  {
+    label: string;
+    icon: string;
+    /** 'mode' áp cho cả bàn, 'role' là vai bí mật bốc cho người cụ thể */
+    kind: 'mode' | 'role';
+    desc: string;
+    minPlayers: number;
+  }
 > = {
   ghost: {
     label: 'Bóng Ma',
     icon: '👻',
-    short: 'Người chết vẫn được nói',
-    desc: 'Người bị loại không rời cuộc chơi: vẫn được bàn luận và bỏ phiếu cùng cả bàn, chỉ là không ai vote họ được nữa.',
+    kind: 'mode',
+    desc: 'Áp dụng cho CẢ BÀN, không bốc cho riêng ai: hễ ai bị loại là thành bóng ma, vẫn được bàn luận và bỏ phiếu như thường, chỉ khác là không ai vote họ được nữa.',
     minPlayers: 4,
   },
   revenger: {
     label: 'Kẻ Báo Thù',
     icon: '💣',
-    short: 'Chết thì kéo theo một người',
-    desc: 'Một người bí mật là Kẻ Báo Thù (phe nào cũng có thể). Khi bị loại, người đó chỉ tay chọn một người bất kỳ đi cùng. Mỗi ván chỉ dùng được một lần.',
+    kind: 'role',
+    desc: 'Bốc bí mật cho MỘT người, phe nào cũng có thể trúng. Khi bị loại, người đó chỉ tay chọn một người bất kỳ đi cùng. Mỗi ván một lần.',
     minPlayers: 5,
   },
   lovers: {
     label: 'Cặp Đôi',
     icon: '💘',
-    short: 'Hai người chết chung',
-    desc: 'Hai người bí mật thành cặp, biết mặt nhau ngay từ lúc xem từ nhưng không biết từ của nhau. Một người bị loại thì người kia chết theo. Nếu hai người khác phe mà sống tới hai người cuối cùng, họ thắng riêng.',
+    kind: 'role',
+    desc: 'Bốc bí mật cho HAI người. Họ biết tên nhau lúc xem từ nhưng không biết từ hay phe của nhau. Một người bị loại thì người kia chết theo. Khác phe mà về đích hai người cuối thì thắng riêng.',
     minPlayers: 5,
   },
 };

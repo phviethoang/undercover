@@ -24,6 +24,7 @@ import { Play } from './screens/Play';
 import { DeathReveal } from './screens/DeathReveal';
 import { RevengePick } from './screens/RevengePick';
 import { WhiteGuess } from './screens/WhiteGuess';
+import { Names } from './screens/Names';
 import { GameOver } from './screens/GameOver';
 import { Scoreboard } from './screens/Scoreboard';
 
@@ -32,6 +33,8 @@ export type Screen =
   | { name: 'rules' }
   | { name: 'scoreboard'; from: 'home' | 'gameOver' }
   | { name: 'setup' }
+  /** thu tên trước khi chia bài — Cặp Đôi cần biết tên người ghép với mình */
+  | { name: 'names'; settings: GameSettings }
   | { name: 'reveal'; index: number }
   | { name: 'play' }
   /** lật vai lần lượt từng người vừa chết trong một đợt */
@@ -168,13 +171,13 @@ export default function App() {
   function startGame(s: GameSettings) {
     setSettings(s);
     savedSettings.save(s);
+    setScreen({ name: 'names', settings: s });
+  }
+
+  function dealWithNames(s: GameSettings, names: string[]) {
+    savedNames.save(names);
     const pair = pickPair(s.categories);
     wordUsage.markUsed(pair.id);
-    const saved = savedNames.load();
-    const names = Array.from(
-      { length: totalPlayers(s) },
-      (_, i) => saved[i]?.trim() || `Người chơi ${i + 1}`,
-    );
     setGame(createGame(names, s, pair));
     setScreen({ name: 'reveal', index: 0 });
   }
@@ -188,17 +191,10 @@ export default function App() {
     setScreen({ name: 'reveal', index: 0 });
   }
 
-  function finishRevealTurn(index: number, name: string) {
+  function finishRevealTurn(index: number) {
     if (!game) return;
-    const players = game.players.map((p) => (p.id === index ? { ...p, name } : p));
-    const next = { ...game, players };
-    setGame(next);
-    if (index + 1 >= players.length) {
-      savedNames.save(players.map((p) => p.name));
-      setScreen({ name: 'play' });
-    } else {
-      setScreen({ name: 'reveal', index: index + 1 });
-    }
+    if (index + 1 >= game.players.length) setScreen({ name: 'play' });
+    else setScreen({ name: 'reveal', index: index + 1 });
   }
 
   function voteOut(playerId: number) {
@@ -291,6 +287,16 @@ export default function App() {
           onStart={startGame}
         />
       );
+    case 'names':
+      return (
+        <Names
+          count={totalPlayers(screen.settings)}
+          initial={savedNames.load()}
+          needsNames={screen.settings.specials.lovers}
+          onBack={() => setScreen({ name: 'setup' })}
+          onConfirm={(names) => dealWithNames(screen.settings, names)}
+        />
+      );
     case 'reveal': {
       if (!game) return null;
       const p = game.players[screen.index];
@@ -301,7 +307,7 @@ export default function App() {
           players={game.players}
           index={screen.index}
           total={game.players.length}
-          onDone={(name) => finishRevealTurn(screen.index, name)}
+          onDone={() => finishRevealTurn(screen.index)}
         />
       );
     }
