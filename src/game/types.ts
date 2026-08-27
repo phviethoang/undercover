@@ -19,7 +19,7 @@ export interface PointRules {
   white: number;
 }
 
-export const DEFAULT_POINTS: PointRules = { civilian: 1, undercover: 3, white: 8 };
+export const DEFAULT_POINTS: PointRules = { civilian: 1, undercover: 3, white: 5 };
 /** Thang điểm của bản Undercover quốc tế (Yanstar Studio) */
 export const OFFICIAL_POINTS: PointRules = { civilian: 2, undercover: 10, white: 6 };
 

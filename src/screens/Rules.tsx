@@ -34,14 +34,41 @@ export function Rules({ points, onBack }: Props) {
           <h3>🔄 Diễn biến</h3>
           <p>1. Chuyền điện thoại vòng tròn, mỗi người đặt tên và bí mật xem từ của mình.</p>
           <p>
-            2. Theo thứ tự app chỉ định, mỗi người <b>mô tả từ của mình bằng một từ/cụm ngắn</b> —
-            không được nói trúng từ khóa, không quá lộ liễu.
+            2. Theo thứ tự app chỉ định, mỗi người <b>mô tả từ của mình bằng một từ/cụm ngắn</b>.
           </p>
           <p>
             3. Hết vòng, cả nhóm thảo luận rồi <b>vote loại một người</b>. Người cầm máy bấm chọn —
             app lật vai người đó. Người đã bị loại không được vote ở vòng sau.
           </p>
           <p>4. Lặp lại cho đến khi có phe thắng.</p>
+        </section>
+
+        <section>
+          <h3>🗣️ Khi mô tả</h3>
+          <p>
+            — <b>Không được nói trúng từ khóa</b> của mình, dù chỉ một phần.
+          </p>
+          <p>— Không lặp lại nguyên si mô tả người trước đã dùng.</p>
+          <p>
+            — Mô tả phải <b>đúng sự thật</b> với từ mình cầm. Nói dối trắng trợn là phạm luật, trừ Mũ
+            Trắng (vốn chẳng có từ nào để mà đúng).
+          </p>
+          <p>
+            — Đừng mô tả quá chính xác: nói trúng phóc thì đồng đội nhận ra, nhưng Gián Điệp cũng
+            nhận ra.
+          </p>
+        </section>
+
+        <section>
+          <h3>⚖️ Hòa phiếu</h3>
+          <p>Khi hai người bằng phiếu, luật gốc cho ba cách xử — cả nhóm chọn trước một cách:</p>
+          <p>1. Hai người đó mô tả thêm một lượt nữa, rồi vote lại.</p>
+          <p>2. Oẳn tù tì, ai thua thì bị loại.</p>
+          <p>3. Bỏ qua vòng này, không loại ai cả.</p>
+          <p className="rules-note">
+            App không tự xử hòa — người cầm máy chỉ bấm chọn người cuối cùng bị loại sau khi nhóm đã
+            phân định xong.
+          </p>
         </section>
 
         <section>
@@ -76,7 +103,24 @@ export function Rules({ points, onBack }: Props) {
           </p>
           <p className="rules-note">
             Mũ Trắng chỉ ăn điểm khi tự thắng (đoán trúng hoặc sống sót tới cuối). Điểm chỉnh được
-            trong phần thiết lập ván; bản Undercover quốc tế dùng thang 2/10/6.
+            trong phần thiết lập ván; bản Undercover quốc tế dùng thang 2/10/6 — họ coi Gián Điệp
+            sống sót mới là khó nhất.
+          </p>
+        </section>
+
+        <section>
+          <h3>👥 Chia vai bao nhiêu là chuẩn</h3>
+          <p>Bảng gợi ý theo game gốc (Dân / Gián Điệp / Mũ Trắng):</p>
+          <p>3–5 người: 1 Gián Điệp, chưa nên có Mũ Trắng</p>
+          <p>6–7 người: 1 Gián Điệp + 1 Mũ Trắng</p>
+          <p>8–10 người: 2 Gián Điệp + 1 Mũ Trắng</p>
+          <p>11–13 người: 3 Gián Điệp + 1 Mũ Trắng</p>
+          <p>14–16 người: 3 Gián Điệp + 2 Mũ Trắng</p>
+          <p>17–20 người: 4 Gián Điệp + 2 Mũ Trắng</p>
+          <p className="rules-note">
+            Nguyên tắc chung: số Mũ Trắng không vượt số Gián Điệp, và Dân phải đông hơn tổng hai phe
+            kia — nếu không thì phe ẩn danh thắng ngay từ khi chia bài. Màn thiết lập có nút áp cấu
+            hình chuẩn theo số người.
           </p>
         </section>
 

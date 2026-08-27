@@ -22,6 +22,19 @@ export function validateSettings(s: GameSettings): string | null {
   return null;
 }
 
+/**
+ * Cấu hình vai gợi ý theo tổng số người, dựa trên bảng chuẩn của game gốc:
+ * nhóm nhỏ không có Mũ Trắng, số Mũ Trắng không bao giờ vượt số Gián Điệp.
+ */
+export function recommendedRoles(total: number): { undercoverCount: number; whiteCount: number } {
+  if (total <= 5) return { undercoverCount: 1, whiteCount: 0 };
+  if (total <= 7) return { undercoverCount: 1, whiteCount: 1 };
+  if (total <= 10) return { undercoverCount: 2, whiteCount: 1 };
+  if (total <= 13) return { undercoverCount: 3, whiteCount: 1 };
+  if (total <= 16) return { undercoverCount: 3, whiteCount: 2 };
+  return { undercoverCount: 4, whiteCount: 2 };
+}
+
 export function createGame(names: string[], settings: GameSettings, pair: Pair): Game {
   const n = names.length;
   const roles: Role[] = [];

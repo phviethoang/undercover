@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { GameSettings, PointRules } from '../game/types';
 import { OFFICIAL_POINTS, DEFAULT_POINTS, totalPlayers } from '../game/types';
-import { validateSettings } from '../game/engine';
+import { recommendedRoles, validateSettings } from '../game/engine';
 
 interface Props {
   initial: GameSettings;
@@ -67,6 +67,19 @@ export function Setup({ initial, categories, onBack, onStart }: Props) {
   const [showPoints, setShowPoints] = useState(false);
   const error = validateSettings(s);
   const total = totalPlayers(s);
+  const rec = recommendedRoles(total);
+  const isRecommended =
+    s.undercoverCount === rec.undercoverCount && s.whiteCount === rec.whiteCount;
+
+  /** Giữ nguyên tổng số người, chỉ chia lại vai theo bảng chuẩn */
+  function applyRecommended() {
+    setS((prev) => ({
+      ...prev,
+      civilianCount: total - rec.undercoverCount - rec.whiteCount,
+      undercoverCount: rec.undercoverCount,
+      whiteCount: rec.whiteCount,
+    }));
+  }
 
   function toggleCategory(name: string) {
     setS((prev) => ({
@@ -128,6 +141,15 @@ export function Setup({ initial, categories, onBack, onStart }: Props) {
             onChange={(v) => setS({ ...s, whiteCount: v })}
           />
           {error && <p className="setup-summary is-error">{error}</p>}
+          {!error && !isRecommended && (
+            <button className="suggest-btn" onClick={applyRecommended}>
+              ⚡ Dùng cấu hình chuẩn cho {total} người ({total - rec.undercoverCount - rec.whiteCount}/
+              {rec.undercoverCount}/{rec.whiteCount})
+            </button>
+          )}
+          {!error && isRecommended && (
+            <p className="setup-summary">✅ Đang dùng cấu hình chuẩn cho {total} người</p>
+          )}
         </div>
 
         <div className="card">
@@ -214,7 +236,7 @@ export function Setup({ initial, categories, onBack, onStart }: Props) {
                   className={`chip ${samePoints(s.points, DEFAULT_POINTS) ? 'is-on' : ''}`}
                   onClick={() => setPoints(DEFAULT_POINTS)}
                 >
-                  Mặc định 1/3/8
+                  Mặc định 1/3/5
                 </button>
                 <button
                   className={`chip ${samePoints(s.points, OFFICIAL_POINTS) ? 'is-on' : ''}`}

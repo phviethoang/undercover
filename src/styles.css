@@ -470,6 +470,24 @@ textarea {
   font-weight: 600;
 }
 
+.suggest-btn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 11px 12px;
+  border-radius: 14px;
+  border: 1px dashed rgba(255, 184, 107, 0.5);
+  background: rgba(255, 184, 107, 0.1);
+  color: var(--accent-b);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.suggest-btn:active {
+  transform: scale(0.98);
+}
+
 .chips {
   display: flex;
   flex-wrap: wrap;
