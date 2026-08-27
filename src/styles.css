@@ -340,7 +340,23 @@ textarea {
   color: var(--muted);
 }
 
+.total-controls {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin: 2px 0;
+}
+
+.total-badge {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--green);
+}
+
 .total-value {
+  min-width: 56px;
+  text-align: center;
   font-size: 44px;
   font-weight: 900;
   line-height: 1.05;

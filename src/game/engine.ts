@@ -2,10 +2,32 @@ import type { Game, GameSettings, PointRules, Player, Role, Winner } from './typ
 import { totalPlayers } from './types';
 import type { Pair } from './words';
 
+/**
+ * Số nguyên ngẫu nhiên trong [0, max). Ưu tiên bộ sinh ngẫu nhiên của trình duyệt
+ * và loại bỏ lệch modulo bằng rejection sampling, để việc chia vai không thiên vị ghế nào.
+ */
+export function randomInt(max: number): number {
+  if (max <= 1) return 0;
+  const c = globalThis.crypto;
+  if (c && typeof c.getRandomValues === 'function') {
+    // vứt bỏ phần dư ở đuôi dải 32-bit để mọi giá trị có xác suất bằng nhau
+    const limit = Math.floor(0x100000000 / max) * max;
+    const buf = new Uint32Array(1);
+    let v = 0;
+    do {
+      c.getRandomValues(buf);
+      v = buf[0];
+    } while (v >= limit);
+    return v % max;
+  }
+  return Math.floor(Math.random() * max);
+}
+
+/** Fisher–Yates: mỗi hoán vị có xác suất bằng nhau */
 export function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = randomInt(i + 1);
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
@@ -44,7 +66,7 @@ export function createGame(names: string[], settings: GameSettings, pair: Pair):
   const dealt = shuffle(roles);
 
   // random phe nào nhận từ nào để không đoán được "từ quen hơn là của dân"
-  const flip = Math.random() < 0.5;
+  const flip = randomInt(2) === 1;
   const civilianWord = flip ? pair.b : pair.a;
   const undercoverWord = flip ? pair.a : pair.b;
 
@@ -59,7 +81,7 @@ export function createGame(names: string[], settings: GameSettings, pair: Pair):
 
   // Mũ Trắng không bao giờ mở lời đầu tiên
   const candidates = players.filter((p) => p.role !== 'white');
-  const start = candidates[Math.floor(Math.random() * candidates.length)];
+  const start = candidates[randomInt(candidates.length)];
 
   return {
     players,

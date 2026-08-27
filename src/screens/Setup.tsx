@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { GameSettings, PointRules } from '../game/types';
-import { OFFICIAL_POINTS, DEFAULT_POINTS, totalPlayers } from '../game/types';
+import { totalPlayers } from '../game/types';
 import { recommendedRoles, validateSettings } from '../game/engine';
 
 interface Props {
@@ -59,26 +59,49 @@ function Stepper({
   );
 }
 
-const samePoints = (a: PointRules, b: PointRules) =>
-  a.civilian === b.civilian && a.undercover === b.undercover && a.white === b.white;
+const MIN_PLAYERS = 3;
+const MAX_PLAYERS = 20;
+
+/** Cấu hình chuẩn cho một tổng số người */
+function standardFor(total: number): {
+  civilianCount: number;
+  undercoverCount: number;
+  whiteCount: number;
+} {
+  const rec = recommendedRoles(total);
+  return {
+    civilianCount: total - rec.undercoverCount - rec.whiteCount,
+    undercoverCount: rec.undercoverCount,
+    whiteCount: rec.whiteCount,
+  };
+}
 
 export function Setup({ initial, categories, onBack, onStart }: Props) {
   const [s, setS] = useState<GameSettings>(initial);
   const [showPoints, setShowPoints] = useState(false);
+  const initialRec = recommendedRoles(totalPlayers(initial));
+  const [manual, setManual] = useState(
+    initial.undercoverCount !== initialRec.undercoverCount ||
+      initial.whiteCount !== initialRec.whiteCount,
+  );
+
   const error = validateSettings(s);
   const total = totalPlayers(s);
-  const rec = recommendedRoles(total);
-  const isRecommended =
-    s.undercoverCount === rec.undercoverCount && s.whiteCount === rec.whiteCount;
 
-  /** Giữ nguyên tổng số người, chỉ chia lại vai theo bảng chuẩn */
-  function applyRecommended() {
-    setS((prev) => ({
-      ...prev,
-      civilianCount: total - rec.undercoverCount - rec.whiteCount,
-      undercoverCount: rec.undercoverCount,
-      whiteCount: rec.whiteCount,
-    }));
+  /** Đổi tổng số người: ở chế độ tự động thì chia lại vai theo bảng chuẩn */
+  function setTotal(next: number) {
+    const clamped = Math.min(MAX_PLAYERS, Math.max(MIN_PLAYERS, next));
+    setS((prev) => {
+      if (!manual) return { ...prev, ...standardFor(clamped) };
+      const civ = clamped - prev.undercoverCount - prev.whiteCount;
+      return { ...prev, civilianCount: Math.max(0, civ) };
+    });
+  }
+
+  function setManualMode(on: boolean) {
+    setManual(on);
+    // tắt chỉnh tay -> quay về cấu hình chuẩn, giữ nguyên tổng số người
+    if (!on) setS((prev) => ({ ...prev, ...standardFor(totalPlayers(prev)) }));
   }
 
   function toggleCategory(name: string) {
@@ -106,49 +129,80 @@ export function Setup({ initial, categories, onBack, onStart }: Props) {
       <div className="setup-body">
         <div className={`total-banner ${error ? 'is-error' : ''}`}>
           <span className="total-label">Tổng số người chơi</span>
-          <span className="total-value">{total}</span>
+          <div className="total-controls">
+            <button
+              className="stepper-btn"
+              disabled={total <= MIN_PLAYERS}
+              onClick={() => setTotal(total - 1)}
+              aria-label="Bớt một người"
+            >
+              −
+            </button>
+            <span className="total-value">{total}</span>
+            <button
+              className="stepper-btn"
+              disabled={total >= MAX_PLAYERS}
+              onClick={() => setTotal(total + 1)}
+              aria-label="Thêm một người"
+            >
+              +
+            </button>
+          </div>
           <span className="total-formula">
-            {s.civilianCount} Dân + {s.undercoverCount} Gián Điệp + {s.whiteCount} Mũ Trắng
+            😇 {s.civilianCount} Dân · 🕵️ {s.undercoverCount} Gián Điệp · 🤍 {s.whiteCount} Mũ Trắng
           </span>
+          {!manual && <span className="total-badge">✅ Cấu hình chuẩn</span>}
         </div>
 
         <div className="card">
-          <Stepper
-            label="Dân Thường"
-            icon="😇"
-            hint="Cùng nhận một từ khóa"
-            value={s.civilianCount}
-            min={2}
-            max={18}
-            onChange={(v) => setS({ ...s, civilianCount: v })}
-          />
-          <Stepper
-            label="Gián Điệp"
-            icon="🕵️"
-            hint="Nhận từ gần nghĩa"
-            value={s.undercoverCount}
-            min={0}
-            max={8}
-            onChange={(v) => setS({ ...s, undercoverCount: v })}
-          />
-          <Stepper
-            label="Mũ Trắng"
-            icon="🤍"
-            hint="Không có từ nào"
-            value={s.whiteCount}
-            min={0}
-            max={3}
-            onChange={(v) => setS({ ...s, whiteCount: v })}
-          />
-          {error && <p className="setup-summary is-error">{error}</p>}
-          {!error && !isRecommended && (
-            <button className="suggest-btn" onClick={applyRecommended}>
-              ⚡ Dùng cấu hình chuẩn cho {total} người ({total - rec.undercoverCount - rec.whiteCount}/
-              {rec.undercoverCount}/{rec.whiteCount})
-            </button>
-          )}
-          {!error && isRecommended && (
-            <p className="setup-summary">✅ Đang dùng cấu hình chuẩn cho {total} người</p>
+          <label className="toggle-row">
+            <span>
+              Tự chỉnh số vai
+              <small>
+                {manual
+                  ? 'Bạn đang tự chia. Tắt để quay về cấu hình chuẩn.'
+                  : 'Đang dùng tỉ lệ chuẩn theo số người chơi'}
+              </small>
+            </span>
+            <input
+              type="checkbox"
+              checked={manual}
+              onChange={(e) => setManualMode(e.target.checked)}
+            />
+            <span className="toggle-ui" />
+          </label>
+
+          {manual && (
+            <div className="collapse-body">
+              <Stepper
+                label="Dân Thường"
+                icon="😇"
+                hint="Cùng nhận một từ khóa"
+                value={s.civilianCount}
+                min={2}
+                max={18}
+                onChange={(v) => setS({ ...s, civilianCount: v })}
+              />
+              <Stepper
+                label="Gián Điệp"
+                icon="🕵️"
+                hint="Nhận từ gần nghĩa"
+                value={s.undercoverCount}
+                min={0}
+                max={8}
+                onChange={(v) => setS({ ...s, undercoverCount: v })}
+              />
+              <Stepper
+                label="Mũ Trắng"
+                icon="🤍"
+                hint="Không có từ nào"
+                value={s.whiteCount}
+                min={0}
+                max={3}
+                onChange={(v) => setS({ ...s, whiteCount: v })}
+              />
+              {error && <p className="setup-summary is-error">{error}</p>}
+            </div>
           )}
         </div>
 
@@ -201,7 +255,7 @@ export function Setup({ initial, categories, onBack, onStart }: Props) {
               Điểm thưởng khi thắng
             </span>
             <span className="collapse-preview">
-              {s.points.civilian} / {s.points.undercover} / {s.points.white} {showPoints ? '▾' : '▸'}
+              😇{s.points.civilian} 🕵️{s.points.undercover} 🤍{s.points.white} {showPoints ? '▾' : '▸'}
             </span>
           </button>
 
@@ -231,20 +285,6 @@ export function Setup({ initial, categories, onBack, onStart }: Props) {
                 max={20}
                 onChange={(v) => setPoints({ white: v })}
               />
-              <div className="preset-row">
-                <button
-                  className={`chip ${samePoints(s.points, DEFAULT_POINTS) ? 'is-on' : ''}`}
-                  onClick={() => setPoints(DEFAULT_POINTS)}
-                >
-                  Mặc định 1/3/5
-                </button>
-                <button
-                  className={`chip ${samePoints(s.points, OFFICIAL_POINTS) ? 'is-on' : ''}`}
-                  onClick={() => setPoints(OFFICIAL_POINTS)}
-                >
-                  Bản quốc tế 2/10/6
-                </button>
-              </div>
             </div>
           )}
         </div>

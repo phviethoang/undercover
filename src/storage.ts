@@ -25,7 +25,8 @@ function remove(key: string): void {
 
 const K = {
   names: 'uc.names',
-  settings: 'uc.settings',
+  // đổi khóa khi mặc định thay đổi -> máy cũ nhận lại cấu hình + thang điểm mới
+  settings: 'uc.settings.v2',
   usage: 'uc.usage',
   session: 'uc.session',
   scores: 'uc.scores',
