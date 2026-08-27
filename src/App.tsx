@@ -1,7 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Game, GameSettings } from './game/types';
-import { DEFAULT_POINTS, totalPlayers } from './game/types';
-import { computeRoundPoints, createGame, eliminate, isCorrectGuess, setWhiteWin } from './game/engine';
+import type { Death, Game, GameSettings } from './game/types';
+import { DEFAULT_POINTS, NO_SPECIALS, totalPlayers } from './game/types';
+import {
+  applyDeaths,
+  computeRoundPoints,
+  createGame,
+  finalizeRound,
+  isCorrectGuess,
+  markWhiteGuessed,
+  pendingRevenger,
+  pendingWhiteGuesser,
+  planElimination,
+  setWhiteWin,
+} from './game/engine';
 import { bankStats, pickPair } from './game/words';
 import { savedNames, savedSettings, scoreboard, session, wordUsage } from './storage';
 import type { ScoreRow } from './storage';
@@ -10,7 +21,8 @@ import { Rules } from './screens/Rules';
 import { Setup } from './screens/Setup';
 import { Reveal } from './screens/Reveal';
 import { Play } from './screens/Play';
-import { RoleReveal } from './screens/RoleReveal';
+import { DeathReveal } from './screens/DeathReveal';
+import { RevengePick } from './screens/RevengePick';
 import { WhiteGuess } from './screens/WhiteGuess';
 import { GameOver } from './screens/GameOver';
 import { Scoreboard } from './screens/Scoreboard';
@@ -22,8 +34,10 @@ export type Screen =
   | { name: 'setup' }
   | { name: 'reveal'; index: number }
   | { name: 'play' }
-  | { name: 'roleReveal'; playerId: number; from: 'vote' | 'whiteClaim' }
-  | { name: 'whiteGuess'; playerId: number; context: 'eliminated' | 'volunteer' }
+  /** lật vai lần lượt từng người vừa chết trong một đợt */
+  | { name: 'deathReveal'; deaths: Death[]; index: number }
+  | { name: 'revengePick'; revengerId: number; chain: Death[] }
+  | { name: 'whiteGuess'; playerId: number; context: 'eliminated' | 'volunteer'; chain: Death[] }
   | { name: 'gameOver' };
 
 interface Snapshot {
@@ -39,9 +53,10 @@ const DEFAULT_SETTINGS: GameSettings = {
   categories: [],
   showCategory: true,
   points: DEFAULT_POINTS,
+  specials: NO_SPECIALS,
 };
 
-const ACTIVE_SCREENS = ['reveal', 'play', 'roleReveal', 'whiteGuess'];
+const ACTIVE_SCREENS = ['reveal', 'play', 'deathReveal', 'revengePick', 'whiteGuess'];
 
 /** Cài đặt lưu từ bản cũ có thể thiếu trường mới — vá lại để không vỡ app */
 function normalizeSettings(raw: Partial<GameSettings> & { playerCount?: number }): GameSettings {
@@ -49,7 +64,9 @@ function normalizeSettings(raw: Partial<GameSettings> & { playerCount?: number }
   const whiteCount = raw.whiteCount ?? DEFAULT_SETTINGS.whiteCount;
   const civilianCount =
     raw.civilianCount ??
-    (raw.playerCount ? Math.max(2, raw.playerCount - undercoverCount - whiteCount) : DEFAULT_SETTINGS.civilianCount);
+    (raw.playerCount
+      ? Math.max(2, raw.playerCount - undercoverCount - whiteCount)
+      : DEFAULT_SETTINGS.civilianCount);
   return {
     civilianCount,
     undercoverCount,
@@ -57,6 +74,7 @@ function normalizeSettings(raw: Partial<GameSettings> & { playerCount?: number }
     categories: raw.categories ?? [],
     showCategory: raw.showCategory ?? true,
     points: { ...DEFAULT_POINTS, ...(raw.points ?? {}) },
+    specials: { ...NO_SPECIALS, ...(raw.specials ?? {}) },
   };
 }
 
@@ -72,9 +90,8 @@ export default function App() {
     const snap = session.load<Snapshot>();
     return snap && snap.game && ACTIVE_SCREENS.includes(snap.screen.name) ? snap : null;
   });
-  const afterGuess = useRef<Screen>({ name: 'play' });
   const stats = useRef(bankStats());
-  /** chặn cộng điểm hai lần nếu người dùng quay lại màn kết thúc */
+  /** chặn cộng điểm hai lần nếu quay lại màn kết thúc */
   const scoredRound = useRef<string | null>(null);
 
   // tự lưu ván đang chơi để lỡ reload / khóa máy không mất
@@ -112,6 +129,40 @@ export default function App() {
       setBoard(scoreboard.load());
     }
     setScreen({ name: 'gameOver' });
+  }
+
+  /**
+   * Sau khi đã lật vai xong một đợt chết, quyết định bước tiếp theo:
+   * Mũ Trắng đoán từ → Kẻ Báo Thù kéo người → chốt vòng.
+   */
+  function resolveChain(g: Game, chain: Death[]) {
+    const whiteId = pendingWhiteGuesser(g, chain);
+    if (whiteId !== null) {
+      setScreen({ name: 'whiteGuess', playerId: whiteId, context: 'eliminated', chain });
+      return;
+    }
+    const revengerId = pendingRevenger(g, chain);
+    if (revengerId !== null) {
+      setScreen({ name: 'revengePick', revengerId, chain });
+      return;
+    }
+    const lastDead = chain.length ? chain[chain.length - 1].playerId : null;
+    const done = finalizeRound(g, lastDead);
+    setGame(done);
+    if (done.winner) finishGame(done);
+    else setScreen({ name: 'play' });
+  }
+
+  /** Bắt đầu một đợt loại người: tính dây chuyền, đánh dấu chết, mở màn lật vai */
+  function beginElimination(g: Game, playerId: number, reason: Death['reason']) {
+    const deaths = planElimination(g, playerId, reason);
+    if (deaths.length === 0) {
+      resolveChain(g, []);
+      return;
+    }
+    const next = applyDeaths(g, deaths);
+    setGame(next);
+    setScreen({ name: 'deathReveal', deaths, index: 0 });
   }
 
   function startGame(s: GameSettings) {
@@ -152,52 +203,52 @@ export default function App() {
 
   function voteOut(playerId: number) {
     if (!game) return;
-    setGame(eliminate(game, playerId));
-    setScreen({ name: 'roleReveal', playerId, from: 'vote' });
+    beginElimination(game, playerId, 'vote');
   }
 
   function whiteClaim(playerId: number) {
     if (!game) return;
     const p = game.players.find((x) => x.id === playerId)!;
     if (p.role === 'white') {
-      setScreen({ name: 'whiteGuess', playerId, context: 'volunteer' });
+      setScreen({ name: 'whiteGuess', playerId, context: 'volunteer', chain: [] });
     } else {
       // nhận vơ Mũ Trắng -> lộ vai và bị loại
-      setGame(eliminate(game, playerId));
-      setScreen({ name: 'roleReveal', playerId, from: 'whiteClaim' });
-    }
-  }
-
-  function continueAfterReveal() {
-    if (!game || screen.name !== 'roleReveal') return;
-    const p = game.players.find((x) => x.id === screen.playerId)!;
-    if (screen.from === 'vote' && p.role === 'white') {
-      // Luật chuẩn: Mũ Trắng bị vote loại luôn được một lần đoán, kể cả khi ván đã ngã ngũ
-      setScreen({ name: 'whiteGuess', playerId: p.id, context: 'eliminated' });
-    } else if (game.winner) {
-      finishGame(game);
-    } else {
-      setScreen({ name: 'play' });
+      beginElimination(game, playerId, 'whiteClaim');
     }
   }
 
   function submitWhiteGuess(guess: string): boolean {
     if (!game || screen.name !== 'whiteGuess') return false;
-    const p = game.players.find((x) => x.id === screen.playerId)!;
     const correct = isCorrectGuess(guess, game.civilianWord);
-    const next = correct
-      ? setWhiteWin(game, p.id)
-      : screen.context === 'volunteer'
-        ? eliminate(game, screen.playerId)
-        : game; // context 'eliminated': đã bị loại từ trước, giữ nguyên
-    setGame(next);
-    afterGuess.current = next.winner ? { name: 'gameOver' } : { name: 'play' };
+    const marked = markWhiteGuessed(game, screen.playerId);
+    if (correct) {
+      const won = setWhiteWin(marked, screen.playerId);
+      setGame(won);
+    } else {
+      setGame(marked);
+    }
     return correct;
   }
 
-  function afterGuessDone() {
-    if (afterGuess.current.name === 'gameOver' && game) finishGame(game);
-    else setScreen(afterGuess.current);
+  /** Bấm tiếp sau khi Mũ Trắng đoán xong */
+  function afterWhiteGuess(correct: boolean) {
+    if (!game || screen.name !== 'whiteGuess') return;
+    if (correct) {
+      finishGame(game);
+      return;
+    }
+    if (screen.context === 'volunteer') {
+      // đoán hụt khi tự nhận -> bị loại, kéo theo dây chuyền như thường
+      beginElimination(game, screen.playerId, 'whiteWrong');
+    } else {
+      resolveChain(game, screen.chain);
+    }
+  }
+
+  function doRevenge(victimId: number) {
+    if (!game || screen.name !== 'revengePick') return;
+    const used: Game = { ...game, revengeUsed: true };
+    beginElimination(used, victimId, 'revenge');
   }
 
   switch (screen.name) {
@@ -206,7 +257,6 @@ export default function App() {
         <Home
           stats={stats.current}
           canResume={resumable !== null}
-          hasScores={board.length > 0}
           onResume={() => {
             if (!resumable) return;
             setSettings(normalizeSettings(resumable.settings));
@@ -248,6 +298,7 @@ export default function App() {
         <Reveal
           key={`${game.pairId}-${p.id}`}
           player={p}
+          players={game.players}
           index={screen.index}
           total={game.players.length}
           onDone={(name) => finishRevealTurn(screen.index, name)}
@@ -257,16 +308,38 @@ export default function App() {
     case 'play':
       if (!game) return null;
       return <Play game={game} onVote={voteOut} onWhiteClaim={whiteClaim} />;
-    case 'roleReveal': {
+    case 'deathReveal': {
       if (!game) return null;
-      const p = game.players.find((x) => x.id === screen.playerId)!;
+      const death = screen.deaths[screen.index];
+      const p = game.players.find((x) => x.id === death.playerId)!;
+      const isLast = screen.index + 1 >= screen.deaths.length;
       return (
-        <RoleReveal
-          key={`${game.round}-${p.id}`}
+        <DeathReveal
+          key={`${game.round}-${death.playerId}`}
           player={p}
-          from={screen.from}
-          winner={game.winner}
-          onContinue={continueAfterReveal}
+          death={death}
+          step={screen.index + 1}
+          total={screen.deaths.length}
+          onContinue={() => {
+            if (isLast) resolveChain(game, screen.deaths);
+            else setScreen({ ...screen, index: screen.index + 1 });
+          }}
+        />
+      );
+    }
+    case 'revengePick': {
+      if (!game) return null;
+      const revenger = game.players.find((x) => x.id === screen.revengerId)!;
+      return (
+        <RevengePick
+          revenger={revenger}
+          players={game.players}
+          onPick={doRevenge}
+          onSkip={() => {
+            const skipped: Game = { ...game, revengeUsed: true };
+            setGame(skipped);
+            resolveChain(skipped, screen.chain);
+          }}
         />
       );
     }
@@ -275,11 +348,11 @@ export default function App() {
       const p = game.players.find((x) => x.id === screen.playerId)!;
       return (
         <WhiteGuess
-          key={p.id}
+          key={`${game.round}-${p.id}`}
           playerName={p.name}
           context={screen.context}
           onSubmit={submitWhiteGuess}
-          onFinish={afterGuessDone}
+          onFinish={afterWhiteGuess}
         />
       );
     }

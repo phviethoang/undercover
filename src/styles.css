@@ -354,6 +354,129 @@ textarea {
   color: var(--green);
 }
 
+.active-specials {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.special-badge {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.special-row {
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--card-border);
+}
+
+.special-row:last-child {
+  border-bottom: none;
+}
+
+.special-row.is-locked {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Ghi chú vai đặc biệt trên thẻ từ */
+.special-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--card-border);
+}
+
+.special-note {
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--muted);
+  max-width: 280px;
+}
+
+.special-note b {
+  color: var(--text);
+}
+
+.ghost-banner {
+  background: rgba(226, 232, 240, 0.1);
+  border: 1px solid rgba(226, 232, 240, 0.3);
+  border-radius: 16px;
+  padding: 11px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+/* Màn Kẻ Báo Thù chọn nạn nhân */
+.revenge {
+  gap: 14px;
+}
+
+.revenge-head {
+  text-align: center;
+}
+
+.revenge-head h2 {
+  font-size: 24px;
+  font-weight: 900;
+  margin-bottom: 8px;
+}
+
+.revenge-grid {
+  flex: 1;
+}
+
+.player-tile.is-picked {
+  border-color: var(--red);
+  background: rgba(251, 113, 133, 0.2);
+  animation: none;
+}
+
+.flip-reason {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.flip-tags {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.tag {
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.tag-revenger {
+  background: rgba(251, 113, 133, 0.2);
+  color: var(--red);
+}
+
+.tag-lover {
+  background: rgba(255, 107, 169, 0.2);
+  color: var(--accent-a);
+}
+
+.win-couple .over-banner {
+  background: linear-gradient(160deg, rgba(255, 107, 169, 0.22), rgba(255, 107, 169, 0.04));
+  border-color: rgba(255, 107, 169, 0.5);
+}
+
 .total-value {
   min-width: 56px;
   text-align: center;
@@ -745,6 +868,14 @@ textarea {
   color: var(--muted);
   font-size: 13px;
   font-weight: 600;
+}
+
+.play-specials {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
 }
 
 .starter-banner {

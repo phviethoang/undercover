@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import type { GameSettings, PointRules } from '../game/types';
-import { totalPlayers } from '../game/types';
-import { recommendedRoles, validateSettings } from '../game/engine';
+import type { GameSettings, PointRules, SpecialKey } from '../game/types';
+import { SPECIAL_INFO, totalPlayers } from '../game/types';
+import { recommendedRoles, specialAvailable, validateSettings } from '../game/engine';
+
+const SPECIAL_KEYS: SpecialKey[] = ['ghost', 'revenger', 'lovers'];
 
 interface Props {
   initial: GameSettings;
@@ -79,6 +81,7 @@ function standardFor(total: number): {
 export function Setup({ initial, categories, onBack, onStart }: Props) {
   const [s, setS] = useState<GameSettings>(initial);
   const [showPoints, setShowPoints] = useState(false);
+  const [showSpecials, setShowSpecials] = useState(false);
   const initialRec = recommendedRoles(totalPlayers(initial));
   const [manual, setManual] = useState(
     initial.undercoverCount !== initialRec.undercoverCount ||
@@ -117,6 +120,14 @@ export function Setup({ initial, categories, onBack, onStart }: Props) {
     setS((prev) => ({ ...prev, points: { ...prev.points, ...patch } }));
   }
 
+  function toggleSpecial(key: SpecialKey) {
+    setS((prev) => ({ ...prev, specials: { ...prev.specials, [key]: !prev.specials[key] } }));
+  }
+
+  const activeSpecials = SPECIAL_KEYS.filter(
+    (k) => s.specials[k] && specialAvailable(k, total),
+  );
+
   return (
     <div className="screen setup">
       <header className="topbar">
@@ -152,6 +163,15 @@ export function Setup({ initial, categories, onBack, onStart }: Props) {
             😇 {s.civilianCount} Dân · 🕵️ {s.undercoverCount} Gián Điệp · 🤍 {s.whiteCount} Mũ Trắng
           </span>
           {!manual && <span className="total-badge">✅ Cấu hình chuẩn</span>}
+          {activeSpecials.length > 0 && (
+            <span className="active-specials">
+              {activeSpecials.map((k) => (
+                <span key={k} className="special-badge">
+                  {SPECIAL_INFO[k].icon} {SPECIAL_INFO[k].label}
+                </span>
+              ))}
+            </span>
+          )}
         </div>
 
         <div className="card">
@@ -250,6 +270,49 @@ export function Setup({ initial, categories, onBack, onStart }: Props) {
         </div>
 
         <div className="card">
+          <button className="collapse-head" onClick={() => setShowSpecials((v) => !v)}>
+            <span className="card-title" style={{ marginBottom: 0 }}>
+              Chức năng đặc biệt
+            </span>
+            <span className="collapse-preview">
+              {activeSpecials.length === 0 ? 'Tắt hết' : `Bật ${activeSpecials.length}`}{' '}
+              {showSpecials ? '▾' : '▸'}
+            </span>
+          </button>
+
+          {showSpecials && (
+            <div className="collapse-body">
+              {SPECIAL_KEYS.map((key) => {
+                const info = SPECIAL_INFO[key];
+                const available = specialAvailable(key, total);
+                return (
+                  <label
+                    key={key}
+                    className={`toggle-row special-row ${available ? '' : 'is-locked'}`}
+                  >
+                    <span>
+                      {info.icon} {info.label}
+                      <small>
+                        {available
+                          ? info.desc
+                          : `Cần ít nhất ${info.minPlayers} người chơi mới bật được`}
+                      </small>
+                    </span>
+                    <input
+                      type="checkbox"
+                      disabled={!available}
+                      checked={s.specials[key] && available}
+                      onChange={() => toggleSpecial(key)}
+                    />
+                    <span className="toggle-ui" />
+                  </label>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="card">
           <button className="collapse-head" onClick={() => setShowPoints((v) => !v)}>
             <span className="card-title" style={{ marginBottom: 0 }}>
               Điểm thưởng khi thắng
@@ -285,6 +348,17 @@ export function Setup({ initial, categories, onBack, onStart }: Props) {
                 max={20}
                 onChange={(v) => setPoints({ white: v })}
               />
+              {activeSpecials.includes('lovers') && (
+                <Stepper
+                  label="Cặp Đôi thắng"
+                  icon="💘"
+                  hint="Khác phe, về đích hai người cuối"
+                  value={s.points.couple}
+                  min={0}
+                  max={20}
+                  onChange={(v) => setPoints({ couple: v })}
+                />
+              )}
             </div>
           )}
         </div>

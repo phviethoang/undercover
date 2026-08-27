@@ -6,7 +6,7 @@ interface Props {
   context: 'eliminated' | 'volunteer';
   /** trả về true nếu đoán đúng */
   onSubmit: (guess: string) => boolean;
-  onFinish: () => void;
+  onFinish: (correct: boolean) => void;
 }
 
 export function WhiteGuess({ playerName, context, onSubmit, onFinish }: Props) {
@@ -29,7 +29,7 @@ export function WhiteGuess({ playerName, context, onSubmit, onFinish }: Props) {
         <p>
           <b>{playerName}</b> — Mũ Trắng — đã đoán đúng từ của Dân!
         </p>
-        <button className="btn btn-primary btn-big" onClick={onFinish}>
+        <button className="btn btn-primary btn-big" onClick={() => onFinish(true)}>
           Xem kết quả 🏁
         </button>
       </div>
@@ -47,7 +47,7 @@ export function WhiteGuess({ playerName, context, onSubmit, onFinish }: Props) {
             : `${playerName} không nắm được cơ hội cuối cùng.`}
         </p>
         <p className="result-note">Từ của Dân vẫn là bí mật... 🤫</p>
-        <button className="btn btn-primary btn-big" onClick={onFinish}>
+        <button className="btn btn-primary btn-big" onClick={() => onFinish(false)}>
           Tiếp tục ➡️
         </button>
       </div>

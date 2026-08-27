@@ -1,22 +1,13 @@
 interface Props {
   stats: { total: number; categories: { name: string; count: number }[] };
   canResume: boolean;
-  hasScores: boolean;
   onResume: () => void;
   onPlay: () => void;
   onRules: () => void;
   onScoreboard: () => void;
 }
 
-export function Home({
-  stats,
-  canResume,
-  hasScores,
-  onResume,
-  onPlay,
-  onRules,
-  onScoreboard,
-}: Props) {
+export function Home({ stats, canResume, onResume, onPlay, onRules, onScoreboard }: Props) {
   return (
     <div className="screen home">
       <div className="home-glow" aria-hidden />
@@ -43,7 +34,7 @@ export function Home({
             📖 Luật chơi
           </button>
           <button className="btn btn-ghost" onClick={onScoreboard}>
-            🏆 Bảng điểm{hasScores ? '' : ''}
+            🏆 Bảng điểm
           </button>
         </div>
       </div>

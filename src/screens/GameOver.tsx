@@ -16,6 +16,7 @@ const BANNERS = {
   civilian: { icon: '😇', label: 'DÂN THƯỜNG THẮNG!', cls: 'win-civilian' },
   undercover: { icon: '🕵️', label: 'GIÁN ĐIỆP THẮNG!', cls: 'win-undercover' },
   white: { icon: '🤍', label: 'MŨ TRẮNG THẮNG!', cls: 'win-white' },
+  couple: { icon: '💘', label: 'CẶP ĐÔI THẮNG!', cls: 'win-couple' },
 } as const;
 
 export function GameOver({ game, earned, board, onPlayAgain, onScoreboard, onHome }: Props) {
@@ -44,6 +45,15 @@ export function GameOver({ game, earned, board, onPlayAgain, onScoreboard, onHom
           ) : (
             <p>Mũ Trắng sống sót đến phút cuối!</p>
           ))}
+        {winner === 'couple' && (
+          <p>
+            {game.players
+              .filter((p) => p.alive && p.loverId !== null)
+              .map((p) => p.name)
+              .join(' 💘 ')}{' '}
+            — khác phe nhưng về đích cùng nhau!
+          </p>
+        )}
       </div>
 
       <div className="card words-card">
@@ -72,7 +82,8 @@ export function GameOver({ game, earned, board, onPlayAgain, onScoreboard, onHom
                 <small> · {subtitle(p)}</small>
               </span>
               <span className="over-role" style={{ color: info.color }}>
-                {info.label}
+                {p.isRevenger && '💣'}
+                {p.loverId !== null && '💘'} {info.label}
               </span>
               <span className={`over-points ${pts > 0 ? 'is-scored' : ''}`}>
                 {pts > 0 ? `+${pts}` : '—'}

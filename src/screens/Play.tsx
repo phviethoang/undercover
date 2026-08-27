@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { Game } from '../game/types';
-import { ROLE_INFO } from '../game/types';
+import type { Game, SpecialKey } from '../game/types';
+import { ROLE_INFO, SPECIAL_INFO } from '../game/types';
 
 interface Props {
   game: Game;
@@ -15,9 +15,13 @@ export function Play({ game, onVote, onWhiteClaim }: Props) {
   const [selected, setSelected] = useState<number | null>(null);
 
   const alive = game.players.filter((p) => p.alive);
+  const dead = game.players.filter((p) => !p.alive);
   const ucLeft = alive.filter((p) => p.role === 'undercover').length;
   const whiteLeft = alive.filter((p) => p.role === 'white').length;
   const starter = game.players.find((p) => p.id === game.startId);
+  const activeSpecials = (['ghost', 'revenger', 'lovers'] as SpecialKey[]).filter(
+    (k) => game.specials[k],
+  );
   const selectedPlayer = selected !== null ? game.players.find((p) => p.id === selected)! : null;
 
   function cancel() {
@@ -42,11 +46,27 @@ export function Play({ game, onVote, onWhiteClaim }: Props) {
         <div className="play-counts">
           Còn ẩn danh: 🕵️ {ucLeft} · 🤍 {whiteLeft}
         </div>
+        {activeSpecials.length > 0 && (
+          <div className="play-specials">
+            {activeSpecials.map((k) => (
+              <span key={k} className="special-badge">
+                {SPECIAL_INFO[k].icon} {SPECIAL_INFO[k].label}
+              </span>
+            ))}
+          </div>
+        )}
       </header>
 
       {starter && (
         <div className="starter-banner">
           🎤 <b>{starter.name}</b> mô tả trước, đi tiếp theo vòng chuyền máy
+        </div>
+      )}
+
+      {game.specials.ghost && dead.length > 0 && (
+        <div className="ghost-banner">
+          👻 <b>Bóng Ma:</b> {dead.map((p) => p.name).join(', ')} tuy đã bị loại nhưng vẫn được bàn
+          luận và bỏ phiếu cùng cả bàn.
         </div>
       )}
 

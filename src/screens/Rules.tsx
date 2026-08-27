@@ -99,7 +99,10 @@ export function Rules({ points, onBack }: Props) {
             🕵️ Gián Điệp thắng: <b>+{points.undercover}</b> cho mỗi Gián Điệp
           </p>
           <p>
-            🤍 Mũ Trắng thắng: <b>+{points.white}</b> — khó nhất nên ăn đậm nhất
+            🤍 Mũ Trắng thắng: <b>+{points.white}</b>
+          </p>
+          <p>
+            💘 Cặp Đôi khác phe về đích: <b>+{points.couple}</b> cho cả hai
           </p>
           <p className="rules-note">
             Mũ Trắng chỉ ăn điểm khi tự thắng (đoán trúng hoặc sống sót tới cuối). Muốn đổi thang
@@ -120,6 +123,30 @@ export function Rules({ points, onBack }: Props) {
             App tự dùng bảng này theo số người, chỉ khi bạn bật “Tự chỉnh số vai” mới chia khác đi.
             Nguyên tắc chung: số Mũ Trắng không vượt số Gián Điệp, và Dân phải đông hơn tổng hai phe
             kia — nếu không thì phe ẩn danh thắng ngay từ khi chia bài.
+          </p>
+        </section>
+
+        <section>
+          <h3>✨ Chức năng đặc biệt</h3>
+          <p>Mặc định tắt hết. Bật trong phần thiết lập ván khi muốn đổi gió.</p>
+          <p>
+            <b>👻 Bóng Ma</b> — người bị loại không rời cuộc chơi: vẫn được bàn luận và bỏ phiếu cùng
+            cả bàn, chỉ là không ai vote họ được nữa. Hợp với nhóm đông, tránh cảnh chết sớm ngồi
+            chơi điện thoại.
+          </p>
+          <p>
+            <b>💣 Kẻ Báo Thù</b> — một người bí mật mang vai này, phe nào cũng có thể trúng. Khi bị
+            loại, người đó chọn một người bất kỳ đi cùng. Mỗi ván chỉ một lần. Cần từ 5 người.
+          </p>
+          <p>
+            <b>💘 Cặp Đôi</b> — hai người bí mật thành cặp. Họ <b>biết tên nhau</b> ngay lúc xem từ,
+            nhưng <b>không biết từ của nhau</b> và cũng không biết người kia phe nào. Một người bị
+            loại thì người kia chết theo ngay, lúc đó cả bàn mới biết họ là cặp. Cần từ 5 người.
+          </p>
+          <p className="rules-note">
+            Cặp Đôi cùng phe thì thắng thua theo phe như thường. Nhưng nếu <b>khác phe</b> mà cả hai
+            sống tới khi chỉ còn hai người, họ tách ra thành phe riêng và <b>cùng thắng</b> — đè lên
+            mọi luật khác. Trường hợp này hiếm, khoảng 2% số ván ở nhóm nhỏ.
           </p>
         </section>
 

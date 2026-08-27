@@ -4,12 +4,13 @@ import { vibrate } from '../vibrate';
 
 interface Props {
   player: Player;
+  players: Player[];
   index: number;
   total: number;
   onDone: (name: string) => void;
 }
 
-export function Reveal({ player, index, total, onDone }: Props) {
+export function Reveal({ player, players, index, total, onDone }: Props) {
   const [step, setStep] = useState<'pass' | 'card'>('pass');
   const [name, setName] = useState(player.name);
   const [holding, setHolding] = useState(false);
@@ -32,6 +33,24 @@ export function Reveal({ player, index, total, onDone }: Props) {
   }
 
   const isWhite = player.word === null;
+  const lover = player.loverId !== null ? players.find((p) => p.id === player.loverId) : null;
+
+  const specialNotes =
+    lover || player.isRevenger ? (
+      <div className="special-notes">
+        {lover && (
+          <span className="special-note">
+            💘 Bạn là <b>Cặp Đôi</b> với <b>{lover.name}</b> — người ấy chết thì bạn chết theo. Bạn
+            không biết từ của người ấy.
+          </span>
+        )}
+        {player.isRevenger && (
+          <span className="special-note">
+            💣 Bạn là <b>Kẻ Báo Thù</b> — bị loại thì được kéo theo một người bất kỳ.
+          </span>
+        )}
+      </div>
+    ) : null;
 
   return (
     <div className="screen reveal">
@@ -68,11 +87,13 @@ export function Reveal({ player, index, total, onDone }: Props) {
                 Bạn không có từ khóa. Nghe mọi người mô tả, giả vờ hòa nhập và đoán từ của Dân — đoán
                 đúng là thắng ngay!
               </span>
+              {specialNotes}
             </div>
           ) : (
             <div className="word-card-open">
               <span className="word-card-label">Từ của bạn</span>
               <span className="word-card-word">{player.word}</span>
+              {specialNotes}
             </div>
           )
         ) : (
