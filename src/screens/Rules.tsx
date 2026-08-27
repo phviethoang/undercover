@@ -1,8 +1,11 @@
+import type { PointRules } from '../game/types';
+
 interface Props {
+  points: PointRules;
   onBack: () => void;
 }
 
-export function Rules({ onBack }: Props) {
+export function Rules({ points, onBack }: Props) {
   return (
     <div className="screen rules">
       <header className="topbar">
@@ -36,7 +39,7 @@ export function Rules({ onBack }: Props) {
           </p>
           <p>
             3. Hết vòng, cả nhóm thảo luận rồi <b>vote loại một người</b>. Người cầm máy bấm chọn —
-            app lật vai người đó.
+            app lật vai người đó. Người đã bị loại không được vote ở vòng sau.
           </p>
           <p>4. Lặp lại cho đến khi có phe thắng.</p>
         </section>
@@ -47,11 +50,33 @@ export function Rules({ onBack }: Props) {
             <b>Dân thắng</b> khi loại hết Gián Điệp và Mũ Trắng.
           </p>
           <p>
-            <b>Gián Điệp thắng</b> khi số Gián Điệp còn sống ≥ số người còn lại.
+            <b>Gián Điệp thắng</b> khi sống sót tới lúc Dân không còn áp đảo về số lượng — tức số
+            người phe ẩn danh còn sống bằng hoặc hơn số Dân còn sống.
           </p>
           <p>
-            <b>Mũ Trắng thắng ngay lập tức</b> nếu đoán đúng từ của Dân — đoán được{' '}
-            <b>bất cứ lúc nào</b>, kể cả khi vừa bị vote loại. Đoán sai thì bị loại như thường.
+            <b>Mũ Trắng thắng</b> theo hai cách: <b>đoán đúng từ của Dân</b> — được đoán{' '}
+            <b>bất cứ lúc nào</b>, kể cả khi vừa bị vote loại; hoặc <b>sống sót tới cuối ván</b>{' '}
+            cùng phe ẩn danh. Đoán sai thì bị loại như thường.
+          </p>
+        </section>
+
+        <section>
+          <h3>💯 Tính điểm</h3>
+          <p>
+            Điểm cộng dồn suốt buổi chơi, xem ở mục <b>Bảng điểm</b>:
+          </p>
+          <p>
+            😇 Dân thắng: <b>+{points.civilian}</b> cho mỗi Dân
+          </p>
+          <p>
+            🕵️ Gián Điệp thắng: <b>+{points.undercover}</b> cho mỗi Gián Điệp
+          </p>
+          <p>
+            🤍 Mũ Trắng thắng: <b>+{points.white}</b> — khó nhất nên ăn đậm nhất
+          </p>
+          <p className="rules-note">
+            Mũ Trắng chỉ ăn điểm khi tự thắng (đoán trúng hoặc sống sót tới cuối). Điểm chỉnh được
+            trong phần thiết lập ván; bản Undercover quốc tế dùng thang 2/10/6.
           </p>
         </section>
 

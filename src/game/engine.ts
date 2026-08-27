@@ -1,4 +1,5 @@
-import type { Game, GameSettings, Player, Role, Winner } from './types';
+import type { Game, GameSettings, PointRules, Player, Role, Winner } from './types';
+import { totalPlayers } from './types';
 import type { Pair } from './words';
 
 export function shuffle<T>(arr: T[]): T[] {
@@ -11,10 +12,12 @@ export function shuffle<T>(arr: T[]): T[] {
 }
 
 export function validateSettings(s: GameSettings): string | null {
-  const civ = s.playerCount - s.undercoverCount - s.whiteCount;
-  if (s.playerCount < 3) return 'Cần ít nhất 3 người chơi';
-  if (s.undercoverCount + s.whiteCount < 1) return 'Cần ít nhất 1 Gián Điệp hoặc Mũ Trắng';
-  if (civ <= s.undercoverCount + s.whiteCount)
+  const total = totalPlayers(s);
+  const infiltrators = s.undercoverCount + s.whiteCount;
+  if (total < 3) return 'Cần ít nhất 3 người chơi';
+  if (total > 20) return 'Tối đa 20 người chơi';
+  if (infiltrators < 1) return 'Cần ít nhất 1 Gián Điệp hoặc Mũ Trắng';
+  if (s.civilianCount <= infiltrators)
     return 'Số Dân phải nhiều hơn tổng Gián Điệp + Mũ Trắng';
   return null;
 }
@@ -54,18 +57,25 @@ export function createGame(names: string[], settings: GameSettings, pair: Pair):
     civilianWord,
     undercoverWord,
     showCategory: settings.showCategory,
+    points: settings.points,
     winner: null,
-    whiteWinnerName: null,
+    whiteGuesserId: null,
   };
 }
 
+/**
+ * Điều kiện thắng theo luật Undercover chuẩn:
+ * - Dân thắng khi loại hết Gián Điệp và Mũ Trắng.
+ * - Phe ẩn danh thắng khi không còn bị Dân áp đảo về số lượng.
+ *   Mũ Trắng sống tới lúc đó cũng tính là thắng (không cần đoán từ).
+ */
 export function checkWin(players: Player[]): Winner | null {
   const alive = players.filter((p) => p.alive);
   const u = alive.filter((p) => p.role === 'undercover').length;
   const w = alive.filter((p) => p.role === 'white').length;
   const c = alive.filter((p) => p.role === 'civilian').length;
   if (u === 0 && w === 0) return 'civilian';
-  if (u > 0 && u >= c + w) return 'undercover';
+  if (u + w >= c) return u > 0 ? 'undercover' : 'white';
   return null;
 }
 
@@ -93,8 +103,42 @@ export function eliminate(game: Game, playerId: number): Game {
   };
 }
 
-export function setWhiteWin(game: Game, playerName: string): Game {
-  return { ...game, winner: 'white', whiteWinnerName: playerName };
+export function setWhiteWin(game: Game, playerId: number): Game {
+  return { ...game, winner: 'white', whiteGuesserId: playerId };
+}
+
+/**
+ * Điểm của từng người sau một ván.
+ * Dân và Gián Điệp ăn điểm theo phe. Mũ Trắng chỉ ăn điểm khi tự thắng —
+ * đoán trúng từ, hoặc sống sót tới lúc phe ẩn danh thắng.
+ */
+export function computeRoundPoints(game: Game, rules: PointRules): Record<number, number> {
+  const out: Record<number, number> = {};
+  if (!game.winner) return out;
+  // Mũ Trắng đoán trúng vào lúc phe ẩn danh cũng đã thắng thế trận
+  // -> Gián Điệp vẫn được điểm, không bị cú đoán cướp mất công sống sót.
+  const undercoverAlsoWon =
+    game.winner === 'white' && game.whiteGuesserId !== null && checkWin(game.players) === 'undercover';
+
+  for (const p of game.players) {
+    let pts = 0;
+    if (game.winner === 'civilian') {
+      if (p.role === 'civilian') pts = rules.civilian;
+    } else if (game.winner === 'undercover') {
+      if (p.role === 'undercover') pts = rules.undercover;
+      else if (p.role === 'white' && p.alive) pts = rules.white;
+    } else if (game.winner === 'white') {
+      if (p.role === 'white') {
+        const wonByGuess = game.whiteGuesserId === p.id;
+        const wonBySurviving = game.whiteGuesserId === null && p.alive;
+        if (wonByGuess || wonBySurviving) pts = rules.white;
+      } else if (p.role === 'undercover' && undercoverAlsoWon) {
+        pts = rules.undercover;
+      }
+    }
+    if (pts > 0) out[p.id] = pts;
+  }
+  return out;
 }
 
 function normalize(s: string): string {

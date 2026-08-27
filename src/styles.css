@@ -246,6 +246,15 @@ textarea {
   position: relative;
 }
 
+.home-actions-row {
+  display: flex;
+  gap: 10px;
+}
+
+.home-actions-row .btn {
+  flex: 1;
+}
+
 .home-stats {
   color: var(--muted);
   font-size: 13px;
@@ -289,6 +298,14 @@ textarea {
   color: var(--text);
 }
 
+.rules-note {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--card-border);
+  font-size: 13px !important;
+  font-style: italic;
+}
+
 /* ===== Setup ===== */
 .setup-body {
   flex: 1;
@@ -298,11 +315,58 @@ textarea {
   margin-bottom: 18px;
 }
 
+/* Tổng số người chơi — chốt chặn chống nhầm khi chỉnh 3 ô bên dưới */
+.total-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 16px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 107, 169, 0.35);
+  background: linear-gradient(135deg, rgba(255, 107, 169, 0.16), rgba(255, 184, 107, 0.14));
+}
+
+.total-banner.is-error {
+  border-color: rgba(251, 113, 133, 0.6);
+  background: rgba(251, 113, 133, 0.12);
+}
+
+.total-label {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.total-value {
+  font-size: 44px;
+  font-weight: 900;
+  line-height: 1.05;
+  background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.total-banner.is-error .total-value {
+  background: none;
+  color: var(--red);
+}
+
+.total-formula {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
 .stepper {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 8px 0;
+  gap: 10px;
 }
 
 .stepper-label {
@@ -310,6 +374,49 @@ textarea {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.stepper-label small {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+/* Khối gập/mở của phần điểm thưởng */
+.collapse-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 16px;
+  padding: 0;
+  cursor: pointer;
+}
+
+.collapse-preview {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--accent-b);
+  white-space: nowrap;
+}
+
+.collapse-body {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--card-border);
+}
+
+.preset-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 .stepper-icon {
@@ -1047,13 +1154,153 @@ textarea {
   white-space: nowrap;
 }
 
+.over-name small {
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 12px;
+}
+
 .over-role {
   font-size: 13px;
   font-weight: 700;
 }
 
-.over-trophy {
+.over-points {
+  min-width: 34px;
+  text-align: right;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.over-points.is-scored {
+  color: var(--accent-b);
+}
+
+/* Khối dẫn đầu ở màn kết thúc ván */
+.mini-board {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  text-align: left;
+  color: var(--text);
+  font-family: inherit;
+  cursor: pointer;
+  padding: 14px 16px;
+}
+
+.mini-board:active {
+  transform: scale(0.99);
+}
+
+.mini-board-title {
+  font-weight: 700;
+  font-size: 14.5px;
+  margin-bottom: 2px;
+}
+
+.mini-board-row {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.mini-board-row b {
+  color: var(--text);
+}
+
+.mini-board-more {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--accent-b);
+  margin-top: 4px;
+}
+
+/* ===== Bảng điểm ===== */
+.board-sub {
+  color: var(--muted);
+  font-size: 13.5px;
+  margin-bottom: 12px;
+}
+
+.board-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+}
+
+.board-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 8px;
+  border-radius: 12px;
+}
+
+.board-row.is-first {
+  background: linear-gradient(135deg, rgba(255, 184, 107, 0.18), rgba(255, 107, 169, 0.1));
+}
+
+.board-rank {
+  width: 26px;
+  text-align: center;
   font-size: 16px;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.board-row.is-first .board-rank {
+  color: var(--text);
+}
+
+.board-name {
+  flex: 1;
+  font-weight: 700;
+  font-size: 15.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.board-meta {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.board-points {
+  min-width: 38px;
+  text-align: right;
+  font-size: 20px;
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.empty-icon {
+  font-size: 64px;
+  opacity: 0.5;
+}
+
+.empty-note {
+  font-size: 13.5px;
 }
 
 .over-actions {

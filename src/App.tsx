@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Game, GameSettings } from './game/types';
-import { createGame, eliminate, isCorrectGuess, setWhiteWin } from './game/engine';
+import { DEFAULT_POINTS, totalPlayers } from './game/types';
+import { computeRoundPoints, createGame, eliminate, isCorrectGuess, setWhiteWin } from './game/engine';
 import { bankStats, pickPair } from './game/words';
-import { savedNames, savedSettings, session, wordUsage } from './storage';
+import { savedNames, savedSettings, scoreboard, session, wordUsage } from './storage';
+import type { ScoreRow } from './storage';
 import { Home } from './screens/Home';
 import { Rules } from './screens/Rules';
 import { Setup } from './screens/Setup';
@@ -11,10 +13,12 @@ import { Play } from './screens/Play';
 import { RoleReveal } from './screens/RoleReveal';
 import { WhiteGuess } from './screens/WhiteGuess';
 import { GameOver } from './screens/GameOver';
+import { Scoreboard } from './screens/Scoreboard';
 
 export type Screen =
   | { name: 'home' }
   | { name: 'rules' }
+  | { name: 'scoreboard'; from: 'home' | 'gameOver' }
   | { name: 'setup' }
   | { name: 'reveal'; index: number }
   | { name: 'play' }
@@ -29,27 +33,49 @@ interface Snapshot {
 }
 
 const DEFAULT_SETTINGS: GameSettings = {
-  playerCount: 6,
+  civilianCount: 4,
   undercoverCount: 1,
   whiteCount: 1,
   categories: [],
   showCategory: true,
+  points: DEFAULT_POINTS,
 };
 
 const ACTIVE_SCREENS = ['reveal', 'play', 'roleReveal', 'whiteGuess'];
 
+/** Cài đặt lưu từ bản cũ có thể thiếu trường mới — vá lại để không vỡ app */
+function normalizeSettings(raw: Partial<GameSettings> & { playerCount?: number }): GameSettings {
+  const undercoverCount = raw.undercoverCount ?? DEFAULT_SETTINGS.undercoverCount;
+  const whiteCount = raw.whiteCount ?? DEFAULT_SETTINGS.whiteCount;
+  const civilianCount =
+    raw.civilianCount ??
+    (raw.playerCount ? Math.max(2, raw.playerCount - undercoverCount - whiteCount) : DEFAULT_SETTINGS.civilianCount);
+  return {
+    civilianCount,
+    undercoverCount,
+    whiteCount,
+    categories: raw.categories ?? [],
+    showCategory: raw.showCategory ?? true,
+    points: { ...DEFAULT_POINTS, ...(raw.points ?? {}) },
+  };
+}
+
 export default function App() {
   const [settings, setSettings] = useState<GameSettings>(() =>
-    savedSettings.load(DEFAULT_SETTINGS),
+    normalizeSettings(savedSettings.load<Partial<GameSettings>>(DEFAULT_SETTINGS)),
   );
   const [game, setGame] = useState<Game | null>(null);
   const [screen, setScreen] = useState<Screen>({ name: 'home' });
+  const [board, setBoard] = useState<ScoreRow[]>(() => scoreboard.load());
+  const [earned, setEarned] = useState<Record<number, number>>({});
   const [resumable, setResumable] = useState<Snapshot | null>(() => {
     const snap = session.load<Snapshot>();
     return snap && snap.game && ACTIVE_SCREENS.includes(snap.screen.name) ? snap : null;
   });
   const afterGuess = useRef<Screen>({ name: 'play' });
   const stats = useRef(bankStats());
+  /** chặn cộng điểm hai lần nếu người dùng quay lại màn kết thúc */
+  const scoredRound = useRef<string | null>(null);
 
   // tự lưu ván đang chơi để lỡ reload / khóa máy không mất
   useEffect(() => {
@@ -68,6 +94,26 @@ export default function App() {
     return () => window.removeEventListener('beforeunload', guard);
   }, [screen.name]);
 
+  /** Chốt điểm một ván vào bảng tích lũy (chỉ chạy một lần cho mỗi ván) */
+  function finishGame(finished: Game) {
+    const roundKey = `${finished.pairId}-${finished.round}`;
+    const points = computeRoundPoints(finished, finished.points);
+    setEarned(points);
+    if (scoredRound.current !== roundKey) {
+      scoredRound.current = roundKey;
+      const byName: Record<string, number> = {};
+      for (const p of finished.players) {
+        if (points[p.id]) byName[p.name] = (byName[p.name] ?? 0) + points[p.id];
+      }
+      scoreboard.add(
+        finished.players.map((p) => p.name),
+        byName,
+      );
+      setBoard(scoreboard.load());
+    }
+    setScreen({ name: 'gameOver' });
+  }
+
   function startGame(s: GameSettings) {
     setSettings(s);
     savedSettings.save(s);
@@ -75,7 +121,7 @@ export default function App() {
     wordUsage.markUsed(pair.id);
     const saved = savedNames.load();
     const names = Array.from(
-      { length: s.playerCount },
+      { length: totalPlayers(s) },
       (_, i) => saved[i]?.trim() || `Người chơi ${i + 1}`,
     );
     setGame(createGame(names, s, pair));
@@ -126,10 +172,10 @@ export default function App() {
     if (!game || screen.name !== 'roleReveal') return;
     const p = game.players.find((x) => x.id === screen.playerId)!;
     if (screen.from === 'vote' && p.role === 'white') {
-      // Mũ Trắng bị loại vẫn được đoán từ lần cuối
+      // Luật chuẩn: Mũ Trắng bị vote loại luôn được một lần đoán, kể cả khi ván đã ngã ngũ
       setScreen({ name: 'whiteGuess', playerId: p.id, context: 'eliminated' });
     } else if (game.winner) {
-      setScreen({ name: 'gameOver' });
+      finishGame(game);
     } else {
       setScreen({ name: 'play' });
     }
@@ -140,7 +186,7 @@ export default function App() {
     const p = game.players.find((x) => x.id === screen.playerId)!;
     const correct = isCorrectGuess(guess, game.civilianWord);
     const next = correct
-      ? setWhiteWin(game, p.name)
+      ? setWhiteWin(game, p.id)
       : screen.context === 'volunteer'
         ? eliminate(game, screen.playerId)
         : game; // context 'eliminated': đã bị loại từ trước, giữ nguyên
@@ -149,25 +195,43 @@ export default function App() {
     return correct;
   }
 
+  function afterGuessDone() {
+    if (afterGuess.current.name === 'gameOver' && game) finishGame(game);
+    else setScreen(afterGuess.current);
+  }
+
   switch (screen.name) {
     case 'home':
       return (
         <Home
           stats={stats.current}
           canResume={resumable !== null}
+          hasScores={board.length > 0}
           onResume={() => {
             if (!resumable) return;
-            setSettings(resumable.settings);
+            setSettings(normalizeSettings(resumable.settings));
             setGame(resumable.game);
             setScreen(resumable.screen);
             setResumable(null);
           }}
           onPlay={() => setScreen({ name: 'setup' })}
           onRules={() => setScreen({ name: 'rules' })}
+          onScoreboard={() => setScreen({ name: 'scoreboard', from: 'home' })}
         />
       );
     case 'rules':
-      return <Rules onBack={() => setScreen({ name: 'home' })} />;
+      return <Rules points={settings.points} onBack={() => setScreen({ name: 'home' })} />;
+    case 'scoreboard':
+      return (
+        <Scoreboard
+          board={board}
+          onReset={() => {
+            scoreboard.reset();
+            setBoard([]);
+          }}
+          onBack={() => setScreen(screen.from === 'home' ? { name: 'home' } : { name: 'gameOver' })}
+        />
+      );
     case 'setup':
       return (
         <Setup
@@ -215,7 +279,7 @@ export default function App() {
           playerName={p.name}
           context={screen.context}
           onSubmit={submitWhiteGuess}
-          onFinish={() => setScreen(afterGuess.current)}
+          onFinish={afterGuessDone}
         />
       );
     }
@@ -224,8 +288,10 @@ export default function App() {
       return (
         <GameOver
           game={game}
+          earned={earned}
+          board={board}
           onPlayAgain={playAgain}
-          onNewSetup={() => setScreen({ name: 'setup' })}
+          onScoreboard={() => setScreen({ name: 'scoreboard', from: 'gameOver' })}
           onHome={() => {
             setGame(null);
             setScreen({ name: 'home' });

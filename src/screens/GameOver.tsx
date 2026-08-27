@@ -1,10 +1,14 @@
 import type { Game, Player } from '../game/types';
 import { ROLE_INFO } from '../game/types';
+import type { ScoreRow } from '../storage';
 
 interface Props {
   game: Game;
+  /** điểm ăn được ván này, keyed theo id người chơi */
+  earned: Record<number, number>;
+  board: ScoreRow[];
   onPlayAgain: () => void;
-  onNewSetup: () => void;
+  onScoreboard: () => void;
   onHome: () => void;
 }
 
@@ -14,13 +18,17 @@ const BANNERS = {
   white: { icon: '🤍', label: 'MŨ TRẮNG THẮNG!', cls: 'win-white' },
 } as const;
 
-export function GameOver({ game, onPlayAgain, onNewSetup, onHome }: Props) {
+export function GameOver({ game, earned, board, onPlayAgain, onScoreboard, onHome }: Props) {
   const winner = game.winner ?? 'civilian';
   const banner = BANNERS[winner];
+  const guesser =
+    game.whiteGuesserId !== null ? game.players.find((p) => p.id === game.whiteGuesserId) : null;
 
-  function isWinner(p: Player): boolean {
-    if (winner === 'white') return p.role === 'white' && p.name === game.whiteWinnerName;
-    return p.role === winner;
+  const top = [...board].sort((a, b) => b.points - a.points).slice(0, 3);
+
+  function subtitle(p: Player): string {
+    if (!p.alive) return 'Bị loại';
+    return 'Sống sót';
   }
 
   return (
@@ -28,11 +36,14 @@ export function GameOver({ game, onPlayAgain, onNewSetup, onHome }: Props) {
       <div className="over-banner">
         <span className="over-icon">{banner.icon}</span>
         <h2>{banner.label}</h2>
-        {winner === 'white' && game.whiteWinnerName && (
-          <p>
-            <b>{game.whiteWinnerName}</b> đã đoán đúng từ của Dân!
-          </p>
-        )}
+        {winner === 'white' &&
+          (guesser ? (
+            <p>
+              <b>{guesser.name}</b> đã đoán đúng từ của Dân!
+            </p>
+          ) : (
+            <p>Mũ Trắng sống sót đến phút cuối!</p>
+          ))}
       </div>
 
       <div className="card words-card">
@@ -52,34 +63,44 @@ export function GameOver({ game, onPlayAgain, onNewSetup, onHome }: Props) {
       <div className="card over-list">
         {game.players.map((p) => {
           const info = ROLE_INFO[p.role];
+          const pts = earned[p.id] ?? 0;
           return (
-            <div key={p.id} className={`over-row ${isWinner(p) ? 'is-winner' : ''}`}>
+            <div key={p.id} className={`over-row ${pts > 0 ? 'is-winner' : ''}`}>
               <span className="over-role-icon">{info.icon}</span>
               <span className="over-name">
                 {p.name}
-                {!p.alive && <small> 💀</small>}
+                <small> · {subtitle(p)}</small>
               </span>
               <span className="over-role" style={{ color: info.color }}>
                 {info.label}
               </span>
-              {isWinner(p) && <span className="over-trophy">🏆</span>}
+              <span className={`over-points ${pts > 0 ? 'is-scored' : ''}`}>
+                {pts > 0 ? `+${pts}` : '—'}
+              </span>
             </div>
           );
         })}
       </div>
 
+      {top.length > 0 && (
+        <button className="card mini-board" onClick={onScoreboard}>
+          <span className="mini-board-title">🏆 Dẫn đầu cả buổi</span>
+          {top.map((r, i) => (
+            <span key={r.name} className="mini-board-row">
+              <b>{['🥇', '🥈', '🥉'][i]}</b> {r.name} · {r.points} điểm
+            </span>
+          ))}
+          <span className="mini-board-more">Xem bảng điểm đầy đủ →</span>
+        </button>
+      )}
+
       <div className="over-actions">
         <button className="btn btn-primary btn-big" onClick={onPlayAgain}>
           🔁 Ván mới (giữ người chơi)
         </button>
-        <div className="over-actions-row">
-          <button className="btn btn-ghost" onClick={onNewSetup}>
-            ⚙️ Đổi thiết lập
-          </button>
-          <button className="btn btn-ghost" onClick={onHome}>
-            🏠 Trang chủ
-          </button>
-        </div>
+        <button className="btn btn-ghost" onClick={onHome}>
+          🏠 Trang chủ
+        </button>
       </div>
     </div>
   );

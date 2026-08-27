@@ -28,6 +28,34 @@ const K = {
   settings: 'uc.settings',
   usage: 'uc.usage',
   session: 'uc.session',
+  scores: 'uc.scores',
+};
+
+export interface ScoreRow {
+  name: string;
+  points: number;
+  games: number;
+  wins: number;
+}
+
+/** Bảng điểm tích lũy cả buổi chơi, cộng dồn theo tên người chơi */
+export const scoreboard = {
+  load: (): ScoreRow[] => get<ScoreRow[]>(K.scores, []),
+  /** @param earned điểm từng người ăn được ván này, keyed theo tên */
+  add(playerNames: string[], earned: Record<string, number>) {
+    const rows = scoreboard.load();
+    const byName = new Map(rows.map((r) => [r.name, r]));
+    for (const name of playerNames) {
+      const row = byName.get(name) ?? { name, points: 0, games: 0, wins: 0 };
+      const pts = earned[name] ?? 0;
+      row.points += pts;
+      row.games += 1;
+      if (pts > 0) row.wins += 1;
+      byName.set(name, row);
+    }
+    set(K.scores, [...byName.values()]);
+  },
+  reset: () => remove(K.scores),
 };
 
 export const savedNames = {

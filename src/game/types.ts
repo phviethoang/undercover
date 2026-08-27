@@ -12,14 +12,34 @@ export interface Player {
   revealed: boolean;
 }
 
+/** Điểm thưởng khi thắng, chỉnh được trong phần thiết lập */
+export interface PointRules {
+  civilian: number;
+  undercover: number;
+  white: number;
+}
+
+export const DEFAULT_POINTS: PointRules = { civilian: 1, undercover: 3, white: 8 };
+/** Thang điểm của bản Undercover quốc tế (Yanstar Studio) */
+export const OFFICIAL_POINTS: PointRules = { civilian: 2, undercover: 10, white: 6 };
+
 export interface GameSettings {
-  playerCount: number;
+  civilianCount: number;
   undercoverCount: number;
   whiteCount: number;
   /** rỗng = tất cả chủ đề */
   categories: string[];
   /** hiện tên chủ đề cho cả bàn (giúp Mũ Trắng có cửa đoán) */
   showCategory: boolean;
+  points: PointRules;
+}
+
+export function totalPlayers(s: {
+  civilianCount: number;
+  undercoverCount: number;
+  whiteCount: number;
+}): number {
+  return s.civilianCount + s.undercoverCount + s.whiteCount;
 }
 
 export interface Game {
@@ -32,9 +52,10 @@ export interface Game {
   civilianWord: string;
   undercoverWord: string;
   showCategory: boolean;
+  points: PointRules;
   winner: Winner | null;
-  /** tên Mũ Trắng thắng nhờ đoán đúng từ */
-  whiteWinnerName: string | null;
+  /** Mũ Trắng thắng nhờ đoán đúng từ (null nếu thắng do sống sót) */
+  whiteGuesserId: number | null;
 }
 
 export const ROLE_INFO: Record<Role, { label: string; icon: string; color: string }> = {
