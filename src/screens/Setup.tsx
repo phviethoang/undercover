@@ -108,7 +108,14 @@ export function Setup({ initial, categories, onBack, onStart }: Props) {
         </div>
 
         <div className="card">
-          <p className="card-title">Chủ đề từ khóa</p>
+          <p className="card-title">
+            Chủ đề từ khóa
+            <span className="card-title-note">
+              {s.categories.length === 0
+                ? `Tất cả ${categories.length} chủ đề`
+                : `Đã chọn ${s.categories.length}/${categories.length}`}
+            </span>
+          </p>
           <div className="chips">
             <button
               className={`chip ${s.categories.length === 0 ? 'is-on' : ''}`}

@@ -165,6 +165,16 @@ textarea {
 .card-title {
   font-weight: 700;
   margin-bottom: 12px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.card-title-note {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
 }
 
 /* ===== Home ===== */
@@ -357,6 +367,11 @@ textarea {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  /* kho có nhiều chủ đề — giới hạn chiều cao rồi cho cuộn trong khung */
+  max-height: 34dvh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 2px;
 }
 
 .chip {

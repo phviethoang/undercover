@@ -18,7 +18,7 @@ Chi tiết luật xem ngay trong app (nút *Luật chơi*).
 
 ## ⚠️ Kho từ = SPOILER
 
-Kho từ (582 cặp, 15 chủ đề) chỉ tồn tại trong repo ở dạng **mã hóa**
+Kho từ (1225 cặp, 27 chủ đề) chỉ tồn tại trong repo ở dạng **mã hóa**
 tại `src/data/wordbank.enc.ts` — để chính người giữ code vẫn tham gia chơi được mà không bị lộ từ.
 
 - Xem thống kê (an toàn, không lộ từ): `npm run words:stats`
