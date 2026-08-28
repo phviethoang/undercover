@@ -40,6 +40,7 @@ export function DeathReveal({ player, death, step, total, onContinue }: Props) {
             setFlipped(true);
             vibrate([40, 60, 80]);
             sfx.flip();
+            if (death.reason === 'lover' || death.reason === 'revenge') sfx.thud();
             // để tiếng vai rơi đúng lúc thẻ quay tới mặt trước
             window.setTimeout(() => {
               if (player.role === 'undercover') sfx.revealUndercover();

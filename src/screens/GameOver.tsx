@@ -32,10 +32,8 @@ export function GameOver({ game, earned, board, onPlayAgain, onScoreboard, onHom
   useEffect(() => {
     if (winner === 'civilian') sfx.fanfare();
     else if (winner === 'couple') sfx.fanfareLove();
-    else if (winner === 'white') {
-      sfx.revealWhite();
-      window.setTimeout(() => sfx.fanfareDark(), 420);
-    } else sfx.fanfareDark();
+    else if (winner === 'white') sfx.fanfareWhite();
+    else sfx.fanfareDark();
   }, [winner]);
 
   function subtitle(p: Player): string {
