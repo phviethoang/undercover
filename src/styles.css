@@ -1557,3 +1557,60 @@ textarea {
     background: rgba(0, 0, 0, 0.18);
   }
 }
+
+/* ===== Bật tắt âm thanh ===== */
+.audio-toggles {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.audio-btn {
+  border: 1px solid var(--card-border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.audio-btn.is-on {
+  border-color: var(--accent-a);
+  background: rgba(255, 107, 169, 0.16);
+  color: var(--text);
+}
+
+.audio-btn:active {
+  transform: scale(0.95);
+}
+
+/* ===== Màn hình khôi phục khi app vấp lỗi ===== */
+.crash {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+}
+
+.crash h2 {
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.crash .btn {
+  width: 100%;
+}
+
+.crash-detail {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: var(--muted);
+  opacity: 0.6;
+  word-break: break-word;
+  max-width: 100%;
+}

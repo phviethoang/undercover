@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { vibrate } from '../vibrate';
+import { sfx } from '../audio';
 
 interface Props {
   playerName: string;
@@ -18,6 +19,8 @@ export function WhiteGuess({ playerName, context, onSubmit, onFinish }: Props) {
     const ok = onSubmit(guess);
     setResult(ok ? 'correct' : 'wrong');
     vibrate(ok ? [60, 40, 60, 40, 120] : 200);
+    if (ok) sfx.correct();
+    else sfx.wrong();
   }
 
   if (result === 'correct') {

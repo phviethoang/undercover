@@ -32,6 +32,9 @@ const K = {
   scores: 'uc.scores',
 };
 
+/** Tăng số này mỗi khi đổi cấu trúc Game/Screen -> ván lưu dở của bản cũ bị bỏ qua thay vì làm vỡ app */
+export const SESSION_VERSION = 3;
+
 export interface ScoreRow {
   name: string;
   points: number;
@@ -81,7 +84,11 @@ export const wordUsage = {
 
 /** Ván đang chơi dở — để lỡ tay reload / khóa màn hình không mất ván */
 export const session = {
-  load: <T>(): T | null => get<T | null>(K.session, null),
-  save: (snapshot: unknown) => set(K.session, snapshot),
+  load: <T>(): T | null => {
+    const raw = get<{ v?: number; snapshot?: T } | null>(K.session, null);
+    if (!raw || raw.v !== SESSION_VERSION || !raw.snapshot) return null;
+    return raw.snapshot;
+  },
+  save: (snapshot: unknown) => set(K.session, { v: SESSION_VERSION, snapshot }),
   clear: () => remove(K.session),
 };

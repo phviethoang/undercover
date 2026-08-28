@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Death, Player } from '../game/types';
 import { DEATH_LABEL, ROLE_INFO } from '../game/types';
 import { vibrate } from '../vibrate';
+import { sfx } from '../audio';
 
 interface Props {
   player: Player;
@@ -38,6 +39,13 @@ export function DeathReveal({ player, death, step, total, onContinue }: Props) {
           if (!flipped) {
             setFlipped(true);
             vibrate([40, 60, 80]);
+            sfx.flip();
+            // để tiếng vai rơi đúng lúc thẻ quay tới mặt trước
+            window.setTimeout(() => {
+              if (player.role === 'undercover') sfx.revealUndercover();
+              else if (player.role === 'white') sfx.revealWhite();
+              else sfx.revealCivilian();
+            }, 330);
           }
         }}
       >

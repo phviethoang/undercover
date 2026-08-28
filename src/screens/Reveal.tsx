@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Player } from '../game/types';
 import { vibrate } from '../vibrate';
+import { sfx } from '../audio';
 
 interface Props {
   player: Player;
@@ -64,6 +65,8 @@ export function Reveal({ player, players, index, total, onDone }: Props) {
           e.preventDefault();
           setHolding(true);
           if (!viewed) vibrate(30);
+          // cố ý dùng CHUNG một tiếng cho mọi vai: cả bàn ngồi cạnh sẽ nghe thấy
+          sfx.peek();
           setViewed(true);
         }}
         onPointerUp={() => setHolding(false)}

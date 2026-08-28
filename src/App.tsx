@@ -14,6 +14,7 @@ import {
   setWhiteWin,
 } from './game/engine';
 import { bankStats, pickPair } from './game/words';
+import { sfx, unlockAudio } from './audio';
 import { savedNames, savedSettings, scoreboard, session, wordUsage } from './storage';
 import type { ScoreRow } from './storage';
 import { Home } from './screens/Home';
@@ -61,6 +62,25 @@ const DEFAULT_SETTINGS: GameSettings = {
 
 const ACTIVE_SCREENS = ['reveal', 'play', 'deathReveal', 'revengePick', 'whiteGuess'];
 
+/**
+ * Ván lưu dở chỉ dùng được khi đủ mọi trường mà các màn hình sẽ đụng tới.
+ * Thiếu một trường thôi là màn chơi nổ giữa chừng và người dùng thấy trang trắng.
+ */
+function isUsableSnapshot(snap: Snapshot | null): snap is Snapshot {
+  if (!snap || !snap.screen || !snap.game || !snap.settings) return false;
+  if (!ACTIVE_SCREENS.includes(snap.screen.name)) return false;
+  const g = snap.game;
+  return (
+    Array.isArray(g.players) &&
+    g.players.length > 0 &&
+    g.players.every((p) => p && typeof p.id === 'number' && typeof p.name === 'string') &&
+    !!g.specials &&
+    !!g.points &&
+    Array.isArray(g.whiteGuessedIds) &&
+    typeof g.round === 'number'
+  );
+}
+
 /** Cài đặt lưu từ bản cũ có thể thiếu trường mới — vá lại để không vỡ app */
 function normalizeSettings(raw: Partial<GameSettings> & { playerCount?: number }): GameSettings {
   const undercoverCount = raw.undercoverCount ?? DEFAULT_SETTINGS.undercoverCount;
@@ -91,7 +111,9 @@ export default function App() {
   const [earned, setEarned] = useState<Record<number, number>>({});
   const [resumable, setResumable] = useState<Snapshot | null>(() => {
     const snap = session.load<Snapshot>();
-    return snap && snap.game && ACTIVE_SCREENS.includes(snap.screen.name) ? snap : null;
+    if (isUsableSnapshot(snap)) return snap;
+    session.clear(); // ván lưu của bản cũ -> dọn luôn cho khỏi vướng
+    return null;
   });
   const stats = useRef(bankStats());
   /** chặn cộng điểm hai lần nếu quay lại màn kết thúc */
@@ -103,8 +125,29 @@ export default function App() {
       session.save({ screen, game, settings } satisfies Snapshot);
     } else if (screen.name === 'gameOver') {
       session.clear();
+      setResumable(null);
     }
   }, [screen, game, settings]);
+
+  // Tiếng nút bấm dùng chung: bắt ở cấp document nên không phải rải vào từng nút.
+  // Trình duyệt chỉ cho phát tiếng sau thao tác thật, nên mở khoá ở lần chạm đầu tiên.
+  useEffect(() => {
+    const onPointer = () => unlockAudio();
+    const onClick = (e: MouseEvent) => {
+      const el = (e.target as HTMLElement | null)?.closest('button');
+      if (!el || el.hasAttribute('disabled') || el.dataset.nosound !== undefined) return;
+      if (el.classList.contains('btn-back')) sfx.back();
+      else if (el.classList.contains('btn-primary') || el.classList.contains('btn-danger'))
+        sfx.confirm();
+      else sfx.tap();
+    };
+    document.addEventListener('pointerdown', onPointer, { once: true });
+    document.addEventListener('click', onClick);
+    return () => {
+      document.removeEventListener('pointerdown', onPointer);
+      document.removeEventListener('click', onClick);
+    };
+  }, []);
 
   useEffect(() => {
     const guard = (e: BeforeUnloadEvent) => {
@@ -176,6 +219,7 @@ export default function App() {
 
   function dealWithNames(s: GameSettings, names: string[]) {
     savedNames.save(names);
+    setResumable(null);
     const pair = pickPair(s.categories);
     wordUsage.markUsed(pair.id);
     setGame(createGame(names, s, pair));

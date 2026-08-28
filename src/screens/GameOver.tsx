@@ -1,6 +1,8 @@
+import { useEffect } from 'react';
 import type { Game, Player } from '../game/types';
 import { ROLE_INFO } from '../game/types';
 import type { ScoreRow } from '../storage';
+import { sfx } from '../audio';
 
 interface Props {
   game: Game;
@@ -26,6 +28,15 @@ export function GameOver({ game, earned, board, onPlayAgain, onScoreboard, onHom
     game.whiteGuesserId !== null ? game.players.find((p) => p.id === game.whiteGuesserId) : null;
 
   const top = [...board].sort((a, b) => b.points - a.points).slice(0, 3);
+
+  useEffect(() => {
+    if (winner === 'civilian') sfx.fanfare();
+    else if (winner === 'couple') sfx.fanfareLove();
+    else if (winner === 'white') {
+      sfx.revealWhite();
+      window.setTimeout(() => sfx.fanfareDark(), 420);
+    } else sfx.fanfareDark();
+  }, [winner]);
 
   function subtitle(p: Player): string {
     if (!p.alive) return 'Bị loại';

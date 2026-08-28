@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import { audioPrefs, sfx } from '../audio';
+
 interface Props {
   stats: { total: number; categories: { name: string; count: number }[] };
   canResume: boolean;
@@ -8,6 +11,9 @@ interface Props {
 }
 
 export function Home({ stats, canResume, onResume, onPlay, onRules, onScoreboard }: Props) {
+  const [sound, setSound] = useState(audioPrefs.sfx);
+  const [music, setMusic] = useState(audioPrefs.music);
+
   return (
     <div className="screen home">
       <div className="home-glow" aria-hidden />
@@ -37,6 +43,32 @@ export function Home({ stats, canResume, onResume, onPlay, onRules, onScoreboard
             🏆 Bảng điểm
           </button>
         </div>
+      </div>
+
+      <div className="audio-toggles">
+        <button
+          className={`audio-btn ${sound ? 'is-on' : ''}`}
+          data-nosound
+          onClick={() => {
+            const next = !sound;
+            audioPrefs.setSfx(next);
+            setSound(next);
+            if (next) sfx.confirm();
+          }}
+        >
+          {sound ? '🔊' : '🔇'} Hiệu ứng
+        </button>
+        <button
+          className={`audio-btn ${music ? 'is-on' : ''}`}
+          data-nosound
+          onClick={() => {
+            const next = !music;
+            audioPrefs.setMusic(next);
+            setMusic(next);
+          }}
+        >
+          🎵 Nhạc nền
+        </button>
       </div>
 
       <p className="home-stats">

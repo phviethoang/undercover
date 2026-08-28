@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Player } from '../game/types';
+import { sfx } from '../audio';
 
 interface Props {
   revenger: Player;
@@ -12,6 +13,10 @@ export function RevengePick({ revenger, players, onPick, onSkip }: Props) {
   const [selected, setSelected] = useState<number | null>(null);
   const targets = players.filter((p) => p.alive);
   const victim = selected !== null ? players.find((p) => p.id === selected)! : null;
+
+  useEffect(() => {
+    sfx.revenge();
+  }, []);
 
   if (targets.length === 0) {
     return (
